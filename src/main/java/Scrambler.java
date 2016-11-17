@@ -12,7 +12,7 @@ public class Scrambler {
     HashMap<String,String> decoder = new HashMap<String, String>();
     PrimeNumbers primeNumbers = new PrimeNumbers(1000);
     ArrayList<Integer> primes=primeNumbers.getPrimeNumbers();
-    Integer p,q, phi,e, d;
+    BigInteger p,q,phi,e,d,n;
     public Scrambler(){
         Random random = new Random();
         for (int i=0; i<letters.length();i++){
@@ -24,11 +24,18 @@ public class Scrambler {
             encoder.put(ch+"",String.format("%02d",i));
             decoder.put(String.format("%02d", i), ch+"");
         }
-        p=primes.get(random.nextInt(primes.size()));
-        q=primes.get(random.nextInt(primes.size()));
-        phi=(p-1)*(q-1);
-        e=primes.get(random.nextInt(50));
-        d=BigInteger.valueOf(e).modInverse(BigInteger.valueOf(phi)).intValue();
+
+        p= BigInteger.valueOf(primes.get(random.nextInt(10)));
+        q= BigInteger.valueOf(primes.get(random.nextInt(10)));
+        n=p.multiply(q);
+        BigInteger minp, minq;
+        minp=p.subtract(BigInteger.valueOf(1));
+        minq=q.subtract(BigInteger.valueOf(1));
+        phi=minp.multiply(minq);
+        e= BigInteger.valueOf(5);
+//        e=primes.get(random.nextInt(32));
+        d=(e.modInverse(phi));
+        System.out.println(phi);
 
     }
     public String encode(String originalString){
@@ -56,13 +63,42 @@ public class Scrambler {
         }
         return result;
     }
-    public ArrayList<Integer> fullencode(String encodedString){
-        return null;
+    public ArrayList<BigInteger> fullencode(String encodedString){
+        ArrayList<BigInteger> result = new ArrayList<BigInteger>();
+        String letter;
+        for (int i=0; i<encodedString.length();i++){
+            letter=encodedString.charAt(i)+"";
+            i++;
+            letter+=encodedString.charAt(i);
+            BigInteger m= BigInteger.valueOf(Integer.parseInt(letter));
+            BigInteger c1 = m.pow(e.intValue());
+            BigInteger c = c1.mod(n);
+            System.out.print("c= "+c+"; m= "+m+"; e="+e+"; n="+n);
+            System.out.println();
+            result.add(c);
+        }
+        return result;
+    }
+    public String fulldecode(ArrayList<BigInteger> fullyEncodedText){
+        String result = "";
+        for(BigInteger c:fullyEncodedText){
+            BigInteger m1= c.pow(d.intValue());
+            BigInteger m = m1.mod(n);
+            System.out.print("m= "+m+"; c= "+c+"; d="+d+"; n="+n);
+            System.out.println();
+            result+=m;
+        }
+        return result;
     }
 
 
     public static void main(String[] args) {
         Scrambler scrambler= new Scrambler();
-        System.out.println(scrambler.decode(scrambler.encode("hello world")));
+        String encoded = scrambler.encode("hello world");
+        ArrayList<BigInteger> fullyEncoded = scrambler.fullencode(encoded);
+        String fullyDecoded = scrambler.fulldecode(fullyEncoded);
+        System.out.println(encoded);
+        System.out.println(fullyDecoded);
+
     }
 }
